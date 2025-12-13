@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'order_page_editor.dart';
 import 'settings_screen.dart';
 import 'reports_screen.dart';
-import '../../Models/product.dart';
+import '../../models/product.dart';
 import '../../data/db_helper.dart';
-// Product model is imported from lib/Models/product.dart
+// Product model is imported from lib/models/product.dart
 
 // Helper function to detect if screen is mobile
 bool isMobile(BuildContext context) {
@@ -13,10 +13,10 @@ bool isMobile(BuildContext context) {
 
 // ----------------- ProductsScreen -----------------
 class ProductsScreen extends StatefulWidget {
-  ProductsScreen({Key? key}) : super(key: key);
+  const ProductsScreen({super.key});
 
   @override
-  _ProductsScreenState createState() => _ProductsScreenState();
+  State<ProductsScreen> createState() => _ProductsScreenState();
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
@@ -25,6 +25,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _barcodeController = TextEditingController();
+  final TextEditingController _costController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
   // runtime list of products
   final List<Product> products = [];
@@ -38,6 +42,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
     _priceController.dispose();
     _categoryController.dispose();
     _searchController.dispose();
+    _barcodeController.dispose();
+    _costController.dispose();
+    _quantityController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -49,13 +57,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<void> _loadProducts() async {
     try {
-      final list = await DbHelper.instance.getProducts();
+      final dbHelper = DbHelper.instance;
+      final productList = await dbHelper.queryAllProducts();
+      
       setState(() {
         products.clear();
-        products.addAll(list);
+        products.addAll(productList);
       });
     } catch (e) {
-      debugPrint('Error loading products: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading products: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -116,7 +133,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   return;
                 }
 
-                final newProduct = Product(name: name, price: price, category: category);
+                final newProduct = Product(name: name, price: price, category: category, cost: 0.0, quantity: 0);
 
                 try {
                   await DbHelper.instance.insertProduct(newProduct);
@@ -208,7 +225,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             child: const Text(
               'Order Details',
@@ -225,7 +242,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(22),
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
               child: orderItems.isEmpty
                   ? const Center(
@@ -286,7 +303,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,7 +535,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(22),
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(10),
@@ -529,7 +546,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                       children: [
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color.fromARGB(210, 166, 166, 166).withOpacity(0.6),
+                                            backgroundColor: const Color.fromARGB(210, 166, 166, 166).withValues(alpha: 0.6),
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                           ),
                                           onPressed: _showAddProductDialog,
@@ -553,7 +570,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                       if (_searchController.text.isNotEmpty) {
                                         final query = _searchController.text.toLowerCase();
                                         if (!product.name.toLowerCase().contains(query) &&
-                                            !product.category.toLowerCase().contains(query)) {
+                                            !(product.category?.toLowerCase().contains(query) ?? false)) {
                                           return const SizedBox.shrink();
                                         }
                                       }
@@ -665,7 +682,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(22),
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(10),
@@ -676,7 +693,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                             children: [
                                               ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
-                                                  backgroundColor: const Color.fromARGB(210, 166, 166, 166).withOpacity(0.6),
+                                                  backgroundColor: const Color.fromARGB(210, 166, 166, 166).withValues(alpha: 0.6),
                                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                                   fixedSize: const Size(80, 80),
                                                 ),
@@ -701,7 +718,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                             if (_searchController.text.isNotEmpty) {
                                               final query = _searchController.text.toLowerCase();
                                               if (!product.name.toLowerCase().contains(query) &&
-                                                  !product.category.toLowerCase().contains(query)) {
+                                                  !(product.category?.toLowerCase().contains(query) ?? false)) {
                                                 return const SizedBox.shrink();
                                               }
                                             }

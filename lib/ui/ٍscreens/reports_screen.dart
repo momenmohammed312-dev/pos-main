@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../data/db_helper.dart';
-import '../../Models/product.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({Key? key}) : super(key: key);

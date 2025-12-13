@@ -1,5 +1,3 @@
-import 'product.dart';
-
 class InvoiceLine {
   final int productId;
   final String name;

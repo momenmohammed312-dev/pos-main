@@ -1,30 +1,67 @@
 class Product {
-  final int? id;
+  final String? id;
   final String name;
+  final String? barcode;
   final double price;
-  final String category;
+  final double cost;
+  final int quantity;
+  final String? category;
+  final String? description;
 
   Product({
     this.id,
     required this.name,
+    this.barcode,
     required this.price,
-    required this.category,
+    required this.cost,
+    required this.quantity,
+    this.category,
+    this.description,
   });
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
       'name': name,
       'price': price,
-      'category': category,
+      'cost': cost,
+      'quantity': quantity,
     };
     if (id != null) map['id'] = id;
+    if (barcode != null) map['barcode'] = barcode;
+    if (category != null) map['category'] = category;
+    if (description != null) map['description'] = description;
     return map;
   }
 
   factory Product.fromMap(Map<String, dynamic> m) => Product(
-        id: m['id'] as int?,
+        id: m['id'] as String?,
         name: m['name'] as String,
+        barcode: m['barcode'] as String?,
         price: (m['price'] as num).toDouble(),
-        category: m['category'] as String? ?? '',
+        cost: (m['cost'] as num?)?.toDouble() ?? 0.0,
+        quantity: (m['quantity'] as num?)?.toInt() ?? 0,
+        category: m['category'] as String?,
+        description: m['description'] as String?,
+      );
+
+  Product copyWith({
+    String? id,
+    String? name,
+    String? barcode,
+    double? price,
+    double? cost,
+    int? quantity,
+    String? category,
+    String? description,
+  }) =>
+      Product(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        barcode: barcode ?? this.barcode,
+        price: price ?? this.price,
+        cost: cost ?? this.cost,
+        quantity: quantity ?? this.quantity,
+        category: category ?? this.category,
+        description: description ?? this.description,
       );
 }

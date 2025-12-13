@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pos_disck/ui/%D9%8Dscreens/ProductDetailsScreen.dart';
 import 'package:pos_disck/ui/%D9%8Dscreens/products_screen.dart';
-import '../../Models/product.dart';
+import '../../models/product.dart';
 import '../../data/db_helper.dart';
 
 /// Clean editor page used instead of the corrupted file. Allows Add/Edit/Delete
@@ -54,7 +53,7 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
             final category = _categoryController.text.trim();
             if (name.isEmpty) return;
             // persist to DB and reload
-            final newProduct = Product(name: name, price: price, category: category);
+            final newProduct = Product(name: name, price: price, category: category, cost: 0.0, quantity: 0);
             await DbHelper.instance.insertProduct(newProduct);
             final list = await DbHelper.instance.getProducts();
             setState(() {
@@ -84,7 +83,7 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
                   final p = widget.products[index];
                   _nameController.text = p.name;
                   _priceController.text = p.price.toString();
-                  _categoryController.text = p.category;
+                  _categoryController.text = p.category ?? '';
 
                   showDialog(
                     context: context,
@@ -106,7 +105,7 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
                           final category = _categoryController.text.trim();
                           if (name.isEmpty) return;
                           final current = widget.products[index];
-                          final updated = Product(id: current.id, name: name, price: price, category: category);
+                          final updated = Product(id: current.id, name: name, price: price, category: category, cost: current.cost, quantity: current.quantity);
                           await DbHelper.instance.updateProduct(updated);
                           final list = await DbHelper.instance.getProducts();
                           setState(() {
@@ -127,7 +126,7 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
                   Navigator.of(context).pop();
                   final p = widget.products[index];
                   if (p.id != null) {
-                    await DbHelper.instance.deleteProduct(p.id!);
+                    await DbHelper.instance.deleteProductById(p.id!);
                     final list = await DbHelper.instance.getProducts();
                     setState(() {
                       widget.products.clear();

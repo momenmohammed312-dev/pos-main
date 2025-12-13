@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../Models/product.dart';
+import '../models/product.dart';
 
 class DbHelper {
   static final DbHelper instance = DbHelper._init();
@@ -81,7 +81,7 @@ class DbHelper {
         )
         ''');
       } catch (e) {
-        print('Error creating invoices table: $e');
+        debugPrint('Error creating invoices table: $e');
       }
 
       try {
@@ -94,7 +94,7 @@ class DbHelper {
         )
         ''');
       } catch (e) {
-        print('Error creating users table: $e');
+        debugPrint('Error creating users table: $e');
       }
     }
   }
@@ -146,7 +146,15 @@ class DbHelper {
     return await db.update(tableProducts, product.toMap(), where: 'id = ?', whereArgs: [product.id]);
   }
 
-  Future<int> clearProducts() async {
+  Future<List<Product>> queryAllProducts() async {
+    final db = await database;
+    final maps = await db.query(tableProducts, orderBy: 'name');
+    return List.generate(maps.length, (i) {
+      return Product.fromMap(maps[i]);
+    });
+  }
+
+  Future<int> deleteAllProducts() async {
     final db = await database;
     return await db.delete(tableProducts);
   }
@@ -154,6 +162,16 @@ class DbHelper {
   Future<int> deleteProduct(int id) async {
     final db = await database;
     return await db.delete(tableProducts, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> deleteProductById(String id) async {
+    final db = await database;
+    return await db.delete(tableProducts, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> clearProducts() async {
+    final db = await database;
+    return await db.delete(tableProducts);
   }
 
   Future close() async {

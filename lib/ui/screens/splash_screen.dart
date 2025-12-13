@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pos_disck/ui/%D9%8Dscreens/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -70,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0f3460).withOpacity(0.5),
+                          color: const Color(0xFF0f3460).withValues(alpha: 0.5),
                           blurRadius: 20,
                           spreadRadius: 5,
                         ),
@@ -161,7 +160,7 @@ class _SplashScreenState extends State<SplashScreen>
                           color: const Color(0xFF533483),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF533483).withOpacity(0.5),
+                              color: const Color(0xFF533483).withValues(alpha: 0.5),
                               blurRadius: 8,
                             ),
                           ],

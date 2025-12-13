@@ -1,0 +1,39 @@
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'temurin'
+      java-version: '17'
+
+  - name: Setup Flutter
+    uses: subosito/flutter-action@v2
+    with:
+      flutter-version-file: pubspec.yaml
+
+  - name: Install Android SDK
+    uses: r0adkll/setup-android@v2
+    with:
+      api-level: 33
+      build-tools: '33.0.0'
+      ndk: false
+
+  - name: Accept Android licenses
+    run: |
+      yes | sdkmanager --licenses
+
+  - name: Disable Flutter analytics
+    run: flutter config --no-analytics
+
+  - name: Get packages
+    run: flutter pub get
+
+  - name: Build APK
+    run: flutter build apk --release
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: app-apk
+      path: build/app/outputs/flutter-apk/*.apk

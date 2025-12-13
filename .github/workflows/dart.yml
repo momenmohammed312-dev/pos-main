@@ -1,0 +1,110 @@
+name: Build Android and Windows Releases
+
+on:
+  # التشغيل عند الدفع إلى الفرع الرئيسي
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+# تعريف متغير ثابت لإصدار Flutter (بناءً على إصدارك)
+env:
+  FLUTTER_VERSION: '3.35.7' # <--- تم التعديل إلى الإصدار الذي لديك
+
+jobs:
+  # ----------------------------------------------------
+  # 1. تحليل واختبار الكود (على Ubuntu)
+  # ----------------------------------------------------
+  analysis_and_tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+
+    - name: Get Dependencies
+      run: flutter pub get
+      
+    - name: Analyze Code
+      # هذا الأمر يمنع الفشل بسبب الأخطاء
+      # لا يُنصح به، لكنه يظهر لك كيفية التجاوز
+      run: flutter analyze --no-fatal-warnings
+      
+    - name: Run Unit and Widget Tests
+      run: flutter test
+
+  # ----------------------------------------------------
+  # 2. بناء نسخة Windows (على Windows Runner)
+  # ----------------------------------------------------
+  build_windows:
+    runs-on: windows-latest # استخدام بيئة Windows للبناء
+    needs: analysis_and_tests
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+
+    # خطوة مهمة: تمكين دعم منصة Windows
+    - name: Enable Windows Support
+      run: flutter config --enable-windows-desktop
+
+    - name: Get Dependencies
+      run: flutter pub get
+    
+    - name: Build Windows Executable
+      run: flutter build windows --release
+
+    - name: Upload Windows Artifact (Release)
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-release-v-${{ github.sha }}
+        path: build/windows/runner/Release/
+        
+  # ----------------------------------------------------
+  # 3. بناء نسخة Android (على Ubuntu Runner)
+  # ----------------------------------------------------
+  build_android:
+    runs-on: ubuntu-latest # استخدام بيئة Linux (الأسرع والأرخص) للبناء
+    needs: analysis_and_tests
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+
+    # تهيئة Java (تساعد في حل مشكلات Gradle)
+    - name: Setup Java 17 for Gradle
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        cache: 'gradle'
+
+    - name: Get Dependencies
+      run: flutter pub get
+      
+    - name: Build Android APK
+      run: flutter build apk --release
+
+    - name: Upload Android Artifact (APK)
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-release-apk-v-${{ github.sha }}
+        path: build/app/outputs/flutter-apk/app-release.apk

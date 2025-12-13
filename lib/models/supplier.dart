@@ -30,7 +30,7 @@ class Supplier {
       phone: map['phone'] ?? '',
       email: map['email'],
       address: map['address'],
-      outstanding: (map['outstanding'] ?? 0).toDouble(),
+      outstanding: map['outstanding'] is String ? double.tryParse(map['outstanding'] as String) ?? 0.0 : (map['outstanding'] ?? 0).toDouble(),
       createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : DateTime.now(),
       updatedAt: map['updatedAt'] != null ? (map['updatedAt'] as Timestamp).toDate() : DateTime.now(),
     );

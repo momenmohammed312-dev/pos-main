@@ -37,9 +37,9 @@ class Product {
         id: m['id'] as String?,
         name: m['name'] as String,
         barcode: m['barcode'] as String?,
-        price: (m['price'] as num).toDouble(),
-        cost: (m['cost'] as num?)?.toDouble() ?? 0.0,
-        quantity: (m['quantity'] as num?)?.toInt() ?? 0,
+        price: m['price'] is String ? double.tryParse(m['price'] as String) ?? 0.0 : (m['price'] as num).toDouble(),
+        cost: m['cost'] is String ? double.tryParse(m['cost'] as String) ?? 0.0 : (m['cost'] as num?)?.toDouble() ?? 0.0,
+        quantity: m['quantity'] is String ? int.tryParse(m['quantity'] as String) ?? 0 : (m['quantity'] as num?)?.toInt() ?? 0,
         category: m['category'] as String?,
         description: m['description'] as String?,
       );

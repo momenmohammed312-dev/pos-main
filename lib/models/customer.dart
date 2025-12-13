@@ -25,8 +25,8 @@ class Customer {
       id: id,
       name: map['name'] ?? '',
       phone: map['phone'] ?? '',
-      balance: (map['balance'] ?? 0).toDouble(),
-      totalPaid: (map['totalPaid'] ?? 0).toDouble(),
+      balance: map['balance'] is String ? double.tryParse(map['balance'] as String) ?? 0.0 : (map['balance'] ?? 0).toDouble(),
+      totalPaid: map['totalPaid'] is String ? double.tryParse(map['totalPaid'] as String) ?? 0.0 : (map['totalPaid'] ?? 0).toDouble(),
       createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : DateTime.now(),
       updatedAt: map['updatedAt'] != null ? (map['updatedAt'] as Timestamp).toDate() : DateTime.now(),
     );

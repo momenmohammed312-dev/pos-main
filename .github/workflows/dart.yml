@@ -69,7 +69,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: windows-release-v-${{ github.sha }}
-        path: build/windows/runner/Release/
+        path: build/windows/x64/runner/Release/
+
         
   # ----------------------------------------------------
   # 3. بناء نسخة Android (على Ubuntu Runner)

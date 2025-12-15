@@ -11,7 +11,7 @@ class DbHelper {
   static final DbHelper instance = DbHelper._init();
 
   static const String _databaseName = 'app_database.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
   static const String tableProducts = 'products';
   static const String tableInvoices = 'invoices';
   static const String tableUsers = 'users';
@@ -97,6 +97,33 @@ class DbHelper {
         debugPrint('Error creating users table: $e');
       }
     }
+
+    // Migrate from v2 to v3: Add missing columns to products table
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE $tableProducts ADD COLUMN cost REAL');
+      } catch (e) {
+        debugPrint('Error adding cost column: $e');
+      }
+      
+      try {
+        await db.execute('ALTER TABLE $tableProducts ADD COLUMN quantity INTEGER');
+      } catch (e) {
+        debugPrint('Error adding quantity column: $e');
+      }
+      
+      try {
+        await db.execute('ALTER TABLE $tableProducts ADD COLUMN barcode TEXT');
+      } catch (e) {
+        debugPrint('Error adding barcode column: $e');
+      }
+      
+      try {
+        await db.execute('ALTER TABLE $tableProducts ADD COLUMN description TEXT');
+      } catch (e) {
+        debugPrint('Error adding description column: $e');
+      }
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -105,7 +132,11 @@ class DbHelper {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       price REAL NOT NULL,
-      category TEXT
+      cost REAL,
+      quantity INTEGER,
+      barcode TEXT,
+      category TEXT,
+      description TEXT
     )
     ''');
     await db.execute('''

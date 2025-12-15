@@ -34,7 +34,7 @@ class Product {
   }
 
   factory Product.fromMap(Map<String, dynamic> m) => Product(
-        id: m['id'] as String?,
+        id: m['id']?.toString(),
         name: m['name'] as String,
         barcode: m['barcode'] as String?,
         price: m['price'] is String ? double.tryParse(m['price'] as String) ?? 0.0 : (m['price'] as num).toDouble(),

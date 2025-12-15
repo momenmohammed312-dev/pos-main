@@ -24,10 +24,18 @@ void main() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             price REAL NOT NULL,
-            category TEXT
+            cost REAL,
+            quantity INTEGER,
+            barcode TEXT,
+            category TEXT,
+            description TEXT
           )
         ''');
       });
+      
+      // Clear any existing data from the singleton database
+      final db = await dbHelper.database;
+      await db.delete('products');
     });
 
     tearDown(() async {
@@ -107,8 +115,9 @@ void main() {
 
       final products = await dbHelper.getProducts();
       expect(products.length, 2);
-      expect(products.first.name, 'Product 1');
-      expect(products.last.name, 'Product 2');
+      // Products are ordered by id DESC (most recent first)
+      expect(products.first.name, 'Product 2');
+      expect(products.last.name, 'Product 1');
     });
 
     test('Update product', () async {
@@ -142,18 +151,18 @@ void main() {
 
     test('Update product with matching ID', () async {
       final product = Product(
-        id: 'test-id',
         name: 'Original Product',
         price: 50.0,
         cost: 25.0,
         quantity: 100,
       );
 
-      // First insert with custom ID
-      await database.insert('products', product.toMap());
-
+      final insertedId = await dbHelper.insertProduct(product);
+      final insertedIdStr = insertedId.toString();
+      
+      // Update the product with the same ID
       final updatedProduct = Product(
-        id: 'test-id',
+        id: insertedIdStr,
         name: 'Updated Product',
         price: 75.0,
         cost: 35.0,
@@ -164,7 +173,7 @@ void main() {
       final rowsAffected = await dbHelper.updateProduct(updatedProduct);
       expect(rowsAffected, 1);
 
-      // Verify the update
+      // Get the updated product to verify it was updated
       final products = await dbHelper.getProducts();
       expect(products.length, 1);
       expect(products.first.name, 'Updated Product');
@@ -174,18 +183,18 @@ void main() {
 
     test('Delete product by ID', () async {
       final product = Product(
-        id: 'test-id',
         name: 'Test Product',
         price: 50.0,
         cost: 25.0,
         quantity: 100,
       );
 
-      // Insert with custom ID
-      await database.insert('products', product.toMap());
+      // Insert product first to get a valid ID
+      final insertedId = await dbHelper.insertProduct(product);
+      final insertedIdStr = insertedId.toString();
 
       // Delete by ID
-      final rowsAffected = await dbHelper.deleteProductById('test-id');
+      final rowsAffected = await dbHelper.deleteProductById(insertedIdStr);
       expect(rowsAffected, 1);
 
       // Verify deletion
@@ -270,7 +279,6 @@ void main() {
 
     test('Product toMap and fromMap consistency', () async {
       final originalProduct = Product(
-        id: 'test-id',
         name: 'Test Product',
         barcode: '123456789',
         price: 99.99,

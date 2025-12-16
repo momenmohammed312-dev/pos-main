@@ -157,6 +157,18 @@ class DbHelper {
       role TEXT DEFAULT 'cashier'
     )
     ''');
+    await db.execute('''
+    CREATE TABLE cashbox (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT UNIQUE NOT NULL,
+      opening_balance REAL DEFAULT 0.0,
+      closing_balance REAL DEFAULT 0.0,
+      expenses REAL DEFAULT 0.0,
+      cash_handover REAL DEFAULT 0.0,
+      created_at TEXT,
+      updated_at TEXT
+    )
+    ''');
   }
 
   Future<int> insertProduct(Product product) async {
@@ -183,6 +195,26 @@ class DbHelper {
     return List.generate(maps.length, (i) {
       return Product.fromMap(maps[i]);
     });
+  }
+
+  Future<void> updateProductQuantity(String productId, int newQuantity) async {
+    final db = await database;
+    await db.update(
+      tableProducts,
+      {'quantity': newQuantity},
+      where: 'id = ?',
+      whereArgs: [productId],
+    );
+  }
+
+  Future<void> updateProductPrice(String productId, double newPrice) async {
+    final db = await database;
+    await db.update(
+      tableProducts,
+      {'price': newPrice},
+      where: 'id = ?',
+      whereArgs: [productId],
+    );
   }
 
   Future<int> deleteAllProducts() async {

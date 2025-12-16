@@ -1,4 +1,4 @@
-name: pos_disck
+name: pos
 description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
@@ -17,6 +17,8 @@ dependencies:
   shared_preferences: ^2.1.0
   sqflite: ^2.2.8
   sqflite_common_ffi: ^2.3.6
+  pdf: ^3.11.1
+  printing: ^5.13.0
 
 dev_dependencies:
   flutter_lints: ^4.0.0
@@ -24,6 +26,11 @@ dev_dependencies:
     sdk: flutter
   mockito: ^5.4.4
   build_runner: ^2.4.9
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true

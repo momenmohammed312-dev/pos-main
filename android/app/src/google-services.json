@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1089822952745",
+    "project_id": "pos-disck",
+    "storage_bucket": "pos-disck.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089822952745:android:fb787cb729e8e648b9fb38",
+        "android_client_info": {
+          "package_name": "com.momen.pos_disck"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_ppOv57p1Vdw7UiHZrG0kgYI8iwT-i3Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

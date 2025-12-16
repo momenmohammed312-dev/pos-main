@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pos_disck/ui/%D9%8Dscreens/products_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'products_screen.dart';
 import '../../models/product.dart';
 import '../../data/db_helper.dart';
 
@@ -18,6 +19,21 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
+  String _currentUserRole = 'cashier'; // Default to cashier
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('userRole') ?? 'cashier';
+    setState(() {
+      _currentUserRole = role;
+    });
+  }
 
   @override
   void dispose() {
@@ -119,24 +135,26 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete'),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  final p = widget.products[index];
-                  if (p.id != null) {
-                    await DbHelper.instance.deleteProductById(p.id!);
-                    final list = await DbHelper.instance.getProducts();
-                    setState(() {
-                      widget.products.clear();
-                      widget.products.addAll(list);
-                    });
-                  } else {
-                    setState(() => widget.products.removeAt(index));
-                  }
-                },
-              ),
+              // Only show delete option for admin users
+              if (_currentUserRole == 'admin')
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Delete'),
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    final p = widget.products[index];
+                    if (p.id != null) {
+                      await DbHelper.instance.deleteProductById(p.id!);
+                      final list = await DbHelper.instance.getProducts();
+                      setState(() {
+                        widget.products.clear();
+                        widget.products.addAll(list);
+                      });
+                    } else {
+                      setState(() => widget.products.removeAt(index));
+                    }
+                  },
+                ),
             ],
           ),
         );

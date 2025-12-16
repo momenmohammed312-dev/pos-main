@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "pos_disck" "\0"
+            VALUE "FileDescription", "POS" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "pos_disck" "\0"
+            VALUE "InternalName", "pos" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "pos_disck.exe" "\0"
-            VALUE "ProductName", "pos_disck" "\0"
+            VALUE "OriginalFilename", "pos.exe" "\0"
+            VALUE "ProductName", "POS" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,22 +1,10 @@
 # Project-level configuration.
-cmake_minimum_required(VERSION 3.21)
-project(pos_disck LANGUAGES CXX)
-
-# Use our custom toolchain file
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/toolchain.cmake" CACHE STRING "Custom toolchain file" FORCE)
-
-# Set Visual Studio 2022 as the default generator
-set(CMAKE_GENERATOR "Visual Studio 17 2022" CACHE INTERNAL "")
-set(CMAKE_GENERATOR_TOOLSET "v143" CACHE INTERNAL "")
-set(CMAKE_GENERATOR_PLATFORM "x64" CACHE INTERNAL "")
-
-# Set the Windows SDK version
-set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "10.0.26100.0")
-set(CMAKE_SYSTEM_VERSION "10.0")
+cmake_minimum_required(VERSION 3.14)
+project(pos LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "pos_disck")
+set(BINARY_NAME "pos")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

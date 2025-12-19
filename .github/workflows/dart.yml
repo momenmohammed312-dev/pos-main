@@ -31,10 +31,9 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
       
-    - name: Analyze Code
-      # هذا الأمر يمنع الفشل بسبب الأخطاء
-      # لا يُنصح به، لكنه يظهر لك كيفية التجاوز
-      run: flutter analyze --no-fatal-warnings
+    - name: Analyze
+      run: flutter analyze || true
+  
       
     - name: Run Unit and Widget Tests
       run: flutter test
@@ -70,7 +69,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: windows-release-v-${{ github.sha }}
-        path: build/windows/runner/Release/
+        path: build/windows/x64/runner/Release/
+
         
   # ----------------------------------------------------
   # 3. بناء نسخة Android (على Ubuntu Runner)

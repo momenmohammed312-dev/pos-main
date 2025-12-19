@@ -4,17 +4,22 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/product.dart';
+import '../services/firebase_service.dart';
 
 class DbHelper {
   static final DbHelper instance = DbHelper._init();
 
   static const String _databaseName = 'app_database.db';
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 5;
   static const String tableProducts = 'products';
   static const String tableInvoices = 'invoices';
   static const String tableUsers = 'users';
+  static const String tableCustomers = 'customers';
+  static const String tableSuppliers = 'suppliers';
 
   Database? _database;
 
@@ -96,6 +101,23 @@ class DbHelper {
       } catch (e) {
         debugPrint('Error creating users table: $e');
       }
+
+      try {
+        await db.execute('''
+        CREATE TABLE IF NOT EXISTS transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          customer_name TEXT,
+          supplier_name TEXT,
+          total_amount REAL,
+          items TEXT,
+          payment_method TEXT DEFAULT 'cash',
+          created_at TEXT,
+          updated_at TEXT
+        )
+        ''');
+      } catch (e) {
+        debugPrint('Error creating transactions table: $e');
+      }
     }
 
     // Migrate from v2 to v3: Add missing columns to products table
@@ -122,6 +144,54 @@ class DbHelper {
         await db.execute('ALTER TABLE $tableProducts ADD COLUMN description TEXT');
       } catch (e) {
         debugPrint('Error adding description column: $e');
+      }
+    }
+
+    // Migrate from v3 to v4: Add payment_method column to transactions table
+    if (oldVersion < 4) {
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN payment_method TEXT DEFAULT "cash"');
+      } catch (e) {
+        debugPrint('Error adding payment_method column: $e');
+      }
+    }
+
+    // Migrate from v4 to v5: Add customers and suppliers tables
+    if (oldVersion < 5) {
+      try {
+        await db.execute('''
+        CREATE TABLE IF NOT EXISTS $tableCustomers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT UNIQUE NOT NULL,
+          phone TEXT,
+          email TEXT,
+          balance REAL DEFAULT 0.0,
+          credit REAL DEFAULT 0.0,
+          debt REAL DEFAULT 0.0,
+          created_at TEXT,
+          updated_at TEXT
+        )
+        ''');
+      } catch (e) {
+        debugPrint('Error creating customers table: $e');
+      }
+
+      try {
+        await db.execute('''
+        CREATE TABLE IF NOT EXISTS $tableSuppliers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT UNIQUE NOT NULL,
+          phone TEXT,
+          email TEXT,
+          balance REAL DEFAULT 0.0,
+          credit REAL DEFAULT 0.0,
+          debt REAL DEFAULT 0.0,
+          created_at TEXT,
+          updated_at TEXT
+        )
+        ''');
+      } catch (e) {
+        debugPrint('Error creating suppliers table: $e');
       }
     }
   }
@@ -169,11 +239,46 @@ class DbHelper {
       updated_at TEXT
     )
     ''');
+    await db.execute('''
+    CREATE TABLE $tableCustomers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      phone TEXT,
+      email TEXT,
+      balance REAL DEFAULT 0.0,
+      credit REAL DEFAULT 0.0,
+      debt REAL DEFAULT 0.0,
+      created_at TEXT,
+      updated_at TEXT
+    )
+    ''');
+    await db.execute('''
+    CREATE TABLE $tableSuppliers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      phone TEXT,
+      email TEXT,
+      balance REAL DEFAULT 0.0,
+      credit REAL DEFAULT 0.0,
+      debt REAL DEFAULT 0.0,
+      created_at TEXT,
+      updated_at TEXT
+    )
+    ''');
   }
 
+  // ============ Product operations ============
   Future<int> insertProduct(Product product) async {
     final db = await database;
     final id = await db.insert(tableProducts, product.toMap());
+    
+    // Sync to Firebase
+    try {
+      await FirebaseService.syncProduct(product.copyWith(id: id.toString()));
+    } catch (e) {
+      debugPrint('Firebase sync error: $e');
+    }
+    
     return id;
   }
 
@@ -186,15 +291,27 @@ class DbHelper {
   Future<int> updateProduct(Product product) async {
     final db = await database;
     if (product.id == null) return 0;
-    return await db.update(tableProducts, product.toMap(), where: 'id = ?', whereArgs: [product.id]);
+    
+    final result = await db.update(tableProducts, product.toMap(), where: 'id = ?', whereArgs: [product.id]);
+    
+    // Sync to Firebase
+    try {
+      await FirebaseService.syncProduct(product);
+    } catch (e) {
+      debugPrint('Firebase sync error: $e');
+    }
+    
+    return result;
   }
 
   Future<List<Product>> queryAllProducts() async {
     final db = await database;
     final maps = await db.query(tableProducts, orderBy: 'name');
-    return List.generate(maps.length, (i) {
-      return Product.fromMap(maps[i]);
-    });
+    List<Product> products = [];
+    for (int i = 0; i < maps.length; i++) {
+      products.add(Product.fromMap(maps[i]));
+    }
+    return products;
   }
 
   Future<void> updateProductQuantity(String productId, int newQuantity) async {
@@ -205,6 +322,16 @@ class DbHelper {
       where: 'id = ?',
       whereArgs: [productId],
     );
+    
+    // Sync to Firebase
+    try {
+      final product = await getProductById(int.parse(productId));
+      if (product != null) {
+        await FirebaseService.syncProduct(product.copyWith(quantity: newQuantity));
+      }
+    } catch (e) {
+      debugPrint('Firebase sync error: $e');
+    }
   }
 
   Future<void> updateProductPrice(String productId, double newPrice) async {
@@ -215,16 +342,47 @@ class DbHelper {
       where: 'id = ?',
       whereArgs: [productId],
     );
+    
+    // Sync to Firebase
+    try {
+      final product = await getProductById(int.parse(productId));
+      if (product != null) {
+        await FirebaseService.syncProduct(product.copyWith(price: newPrice));
+      }
+    } catch (e) {
+      debugPrint('Firebase sync error: $e');
+    }
   }
 
   Future<int> deleteAllProducts() async {
     final db = await database;
-    return await db.delete(tableProducts);
+    final result = await db.delete(tableProducts);
+    
+    // Sync to Firebase (delete all)
+    try {
+      final products = await getProducts();
+      for (final product in products) {
+        await FirebaseFirestore.instance.collection('products').doc(product.id.toString()).delete();
+      }
+    } catch (e) {
+      debugPrint('Firebase sync error: $e');
+    }
+    
+    return result;
   }
 
   Future<int> deleteProduct(int id) async {
     final db = await database;
-    return await db.delete(tableProducts, where: 'id = ?', whereArgs: [id]);
+    final result = await db.delete(tableProducts, where: 'id = ?', whereArgs: [id]);
+    
+    // Sync to Firebase
+    try {
+      await FirebaseFirestore.instance.collection('products').doc(id.toString()).delete();
+    } catch (e) {
+      debugPrint('Firebase sync error: $e');
+    }
+    
+    return result;
   }
 
   Future<int> deleteProductById(String id) async {
@@ -237,11 +395,13 @@ class DbHelper {
     return await db.delete(tableProducts);
   }
 
-  Future close() async {
-    final db = _database;
-    if (db != null) {
-      await db.close();
+  Future<Product?> getProductById(int id) async {
+    final db = await database;
+    final maps = await db.query(tableProducts, where: 'id = ?', whereArgs: [id]);
+    if (maps.isNotEmpty) {
+      return Product.fromMap(maps.first);
     }
+    return null;
   }
 
   // ============ Invoice operations ============
@@ -290,8 +450,108 @@ class DbHelper {
     return await db.query(tableUsers);
   }
 
-  Future<int> deleteUser(int id) async {
+  Future<int> deleteUser(int id) {
+    final db = _database;
+    if (db != null) {
+      return db.delete(tableUsers, where: 'id = ?', whereArgs: [id]);
+    }
+    return Future.value(0);
+  }
+
+  Future<int> updateUser(Map<String, dynamic> user) async {
     final db = await database;
-    return await db.delete(tableUsers, where: 'id = ?', whereArgs: [id]);
+    return await db.update(tableUsers, user, where: 'id = ?', whereArgs: [user['id']]);
+  }
+
+  // ============ Customer operations ============
+  Future<int> insertCustomer(Map<String, dynamic> customer) async {
+    final db = await database;
+    customer['created_at'] = DateTime.now().toIso8601String();
+    customer['updated_at'] = DateTime.now().toIso8601String();
+    return await db.insert(tableCustomers, customer);
+  }
+
+  Future<Map<String, dynamic>?> getCustomerByName(String name) async {
+    final db = await database;
+    final maps = await db.query(tableCustomers, where: 'name = ?', whereArgs: [name]);
+    return maps.isNotEmpty ? maps.first : null;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllCustomers() async {
+    final db = await database;
+    return await db.query(tableCustomers, orderBy: 'name');
+  }
+
+  Future<int> updateCustomer(Map<String, dynamic> customer) async {
+    final db = await database;
+    customer['updated_at'] = DateTime.now().toIso8601String();
+    return await db.update(tableCustomers, customer, where: 'id = ?', whereArgs: [customer['id']]);
+  }
+
+  Future<int> deleteCustomer(int id) async {
+    final db = await database;
+    return await db.delete(tableCustomers, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ============ Supplier operations ============
+  Future<int> insertSupplier(Map<String, dynamic> supplier) async {
+    final db = await database;
+    supplier['created_at'] = DateTime.now().toIso8601String();
+    supplier['updated_at'] = DateTime.now().toIso8601String();
+    return await db.insert(tableSuppliers, supplier);
+  }
+
+  Future<Map<String, dynamic>?> getSupplierByName(String name) async {
+    final db = await database;
+    final maps = await db.query(tableSuppliers, where: 'name = ?', whereArgs: [name]);
+    return maps.isNotEmpty ? maps.first : null;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllSuppliers() async {
+    final db = await database;
+    return await db.query(tableSuppliers, orderBy: 'name');
+  }
+
+  Future<int> updateSupplier(Map<String, dynamic> supplier) async {
+    final db = await database;
+    supplier['updated_at'] = DateTime.now().toIso8601String();
+    return await db.update(tableSuppliers, supplier, where: 'id = ?', whereArgs: [supplier['id']]);
+  }
+
+  Future<int> deleteSupplier(int id) async {
+    final db = await database;
+    return await db.delete(tableSuppliers, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ============ Transaction operations ============
+  Future<int> insertTransaction(Map<String, dynamic> transaction) async {
+    final db = await database;
+    transaction['created_at'] = DateTime.now().toIso8601String();
+    return await db.insert('transactions', transaction);
+  }
+
+  Future<List<Map<String, dynamic>>> getAllTransactions() async {
+    final db = await database;
+    return await db.query('transactions', orderBy: 'created_at DESC');
+  }
+
+  Future<List<Map<String, dynamic>>> getTransactionsByCustomer(String customerName) async {
+    final db = await database;
+    return await db.query(
+      'transactions',
+      where: 'customer_name = ?',
+      whereArgs: [customerName],
+      orderBy: 'created_at DESC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getTransactionsBySupplier(String supplierName) async {
+    final db = await database;
+    return await db.query(
+      'transactions',
+      where: 'supplier_name = ?',
+      whereArgs: [supplierName],
+      orderBy: 'created_at DESC',
+    );
   }
 }

@@ -44,6 +44,17 @@ class Product {
         description: m['description'] as String?,
       );
 
+  factory Product.fromFirebase(Map<String, dynamic> data, String documentId) => Product(
+        id: documentId,
+        name: data['name'] ?? '',
+        barcode: data['barcode'],
+        price: (data['price'] as num?)?.toDouble() ?? 0.0,
+        cost: (data['cost'] as num?)?.toDouble() ?? 0.0,
+        quantity: (data['quantity'] as num?)?.toInt() ?? 0,
+        category: data['category'],
+        description: data['description'],
+      );
+
   Product copyWith({
     String? id,
     String? name,

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pos_disck/models/product.dart';
+import 'package:pos/models/product.dart';
 
 void main() {
   group('Product Model Tests', () {

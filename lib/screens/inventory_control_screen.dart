@@ -26,8 +26,7 @@ class _InventoryControlScreenState extends State<InventoryControlScreen> {
   Future<void> _loadUserAndProducts() async {
     final sp = await SharedPreferences.getInstance();
     _currentUser = sp.getString('currentUser') ?? '';
-    final user = await DbHelper.instance.getUserByName(_currentUser);
-    _currentUserRole = user?['role'] ?? 'cashier';
+    _currentUserRole = sp.getString('userRole') ?? 'cashier';
     if (_currentUserRole != 'admin') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

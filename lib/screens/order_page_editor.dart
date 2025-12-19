@@ -25,6 +25,19 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
   void initState() {
     super.initState();
     _loadUserRole();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      final productsFromDb = await DbHelper.instance.getProducts();
+      setState(() {
+        widget.products.clear();
+        widget.products.addAll(productsFromDb);
+      });
+    } catch (e) {
+      print('Error loading products in OrderPageEditor: $e');
+    }
   }
 
   Future<void> _loadUserRole() async {
@@ -52,32 +65,79 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add New Product'),
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Add New Product',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Product Name')),
-            TextField(controller: _priceController, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number),
-            TextField(controller: _categoryController, decoration: const InputDecoration(labelText: 'Category')),
+            TextField(
+              controller: _nameController, 
+              decoration: const InputDecoration(
+                labelText: 'Product Name',
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _priceController, 
+              decoration: const InputDecoration(
+                labelText: 'Price',
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
+              ), 
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _categoryController, 
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () async {
-            final name = _nameController.text.trim();
-            final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
-            final category = _categoryController.text.trim();
-            if (name.isEmpty) return;
-            // persist to DB and reload
-            final newProduct = Product(name: name, price: price, category: category, cost: 0.0, quantity: 0);
-            await DbHelper.instance.insertProduct(newProduct);
-            final list = await DbHelper.instance.getProducts();
-            setState(() {
-              widget.products.clear();
-              widget.products.addAll(list);
-            });
-            Navigator.of(ctx).pop();
-          }, child: const Text('Save')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(), 
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = _nameController.text.trim();
+              final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+              final category = _categoryController.text.trim();
+              if (name.isEmpty) return;
+              // persist to DB and reload
+              final newProduct = Product(name: name, price: price, category: category, cost: 0.0, quantity: 0);
+              await DbHelper.instance.insertProduct(newProduct);
+              final list = await DbHelper.instance.getProducts();
+              setState(() {
+                widget.products.clear();
+                widget.products.addAll(list);
+              });
+              Navigator.of(ctx).pop();
+            }, 
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Save'),
+          ),
         ],
       ),
     );
@@ -86,76 +146,133 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
   void _showEditDeleteMenu(int index) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       builder: (_) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Edit'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  final p = widget.products[index];
-                  _nameController.text = p.name;
-                  _priceController.text = p.price.toString();
-                  _categoryController.text = p.category ?? '';
-
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Edit Product'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Product Name')),
-                          TextField(controller: _priceController, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number),
-                          TextField(controller: _categoryController, decoration: const InputDecoration(labelText: 'Category')),
-                        ],
-                      ),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-                        ElevatedButton(onPressed: () async {
-                          final name = _nameController.text.trim();
-                          final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
-                          final category = _categoryController.text.trim();
-                          if (name.isEmpty) return;
-                          final current = widget.products[index];
-                          final updated = Product(id: current.id, name: name, price: price, category: category, cost: current.cost, quantity: current.quantity);
-                          await DbHelper.instance.updateProduct(updated);
-                          final list = await DbHelper.instance.getProducts();
-                          setState(() {
-                            widget.products.clear();
-                            widget.products.addAll(list);
-                          });
-                          Navigator.of(ctx).pop();
-                        }, child: const Text('Save')),
-                      ],
-                    ),
-                  );
-                },
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
-              // Only show delete option for admin users
-              if (_currentUserRole == 'admin')
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text('Delete'),
-                  onTap: () async {
+                  leading: Icon(Icons.edit, color: Colors.blue.shade600),
+                  title: const Text('Edit'),
+                  onTap: () {
                     Navigator.of(context).pop();
                     final p = widget.products[index];
-                    if (p.id != null) {
-                      await DbHelper.instance.deleteProductById(p.id!);
-                      final list = await DbHelper.instance.getProducts();
-                      setState(() {
-                        widget.products.clear();
-                        widget.products.addAll(list);
-                      });
-                    } else {
-                      setState(() => widget.products.removeAt(index));
-                    }
+                    _nameController.text = p.name;
+                    _priceController.text = p.price.toString();
+                    _categoryController.text = p.category ?? '';
+
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: Colors.white,
+                        title: const Text(
+                          'Edit Product',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextField(
+                              controller: _nameController, 
+                              decoration: const InputDecoration(
+                                labelText: 'Product Name',
+                                border: OutlineInputBorder(),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _priceController, 
+                              decoration: const InputDecoration(
+                                labelText: 'Price',
+                                border: OutlineInputBorder(),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                                ),
+                              ), 
+                              keyboardType: TextInputType.number,
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _categoryController, 
+                              decoration: const InputDecoration(
+                                labelText: 'Category',
+                                border: OutlineInputBorder(),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(), 
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final name = _nameController.text.trim();
+                              final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+                              final category = _categoryController.text.trim();
+                              if (name.isEmpty) return;
+                              final current = widget.products[index];
+                              final updated = Product(id: current.id, name: name, price: price, category: category, cost: current.cost, quantity: current.quantity);
+                              await DbHelper.instance.updateProduct(updated);
+                              final list = await DbHelper.instance.getProducts();
+                              setState(() {
+                                widget.products.clear();
+                                widget.products.addAll(list);
+                              });
+                              Navigator.of(ctx).pop();
+                            }, 
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade600,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Save'),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                 ),
-            ],
+                // Only show delete option for admin users
+                if (_currentUserRole == 'admin')
+                  ListTile(
+                    leading: const Icon(Icons.delete, color: Colors.red),
+                    title: const Text('Delete'),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      final p = widget.products[index];
+                      if (p.id != null) {
+                        await DbHelper.instance.deleteProductById(p.id!);
+                        final list = await DbHelper.instance.getProducts();
+                        setState(() {
+                          widget.products.clear();
+                          widget.products.addAll(list);
+                        });
+                      } else {
+                        setState(() => widget.products.removeAt(index));
+                      }
+                    },
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -164,45 +281,128 @@ class _OrderPageEditorState extends State<OrderPageEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFE8E8E8),
-      appBar: AppBar(title: const Text('Edit Products')),
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text('Edit Products'),
+        backgroundColor: Colors.blue.shade600,
+        foregroundColor: Colors.white,
+        elevation: 2,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: EdgeInsets.all(isMobile ? 8.0 : 12.0),
         child: Column(
           children: [
+            // Top navigation row
             Row(
               children: [
-                IconButton(icon: const Icon(Icons.home), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  ProductsScreen()))),
-                IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: _showAddProductDialog),
+                IconButton(
+                  icon: const Icon(Icons.home),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProductsScreen())),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadProducts,
+                  tooltip: 'Refresh Products',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: _showAddProductDialog,
+                ),
                 Expanded(
-                  child: TextField(controller: _searchController, decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search products'), onChanged: (_) => setState(() {})),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: 'Search products',
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 8 : 16,
+                        vertical: isMobile ? 8 : 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
+                        borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                      ),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isMobile ? 8 : 16),
+            // Products grid
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final width = constraints.maxWidth;
-                  final cross = width < 600 ? 2 : 6;
+                  final cross = isMobile ? 2 : (width < 900 ? 3 : 4);
                   return GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cross, childAspectRatio: 1.3),
+                    padding: EdgeInsets.all(isMobile ? 4 : 8),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: cross,
+                      childAspectRatio: 1.3,
+                      crossAxisSpacing: isMobile ? 8 : 12,
+                      mainAxisSpacing: isMobile ? 8 : 12,
+                    ),
                     itemCount: widget.products.length,
                     itemBuilder: (context, i) {
                       final p = widget.products[i];
-                      if (_searchController.text.isNotEmpty && !p.name.toLowerCase().contains(_searchController.text.toLowerCase())) return const SizedBox.shrink();
+                      final searchQuery = _searchController.text.toLowerCase().trim();
+                      if (searchQuery.isNotEmpty && 
+                          !p.name.toLowerCase().contains(searchQuery) &&
+                          !(p.category?.toLowerCase().contains(searchQuery) ?? false)) {
+                        return const SizedBox.shrink();
+                      }
                       return Card(
+                        elevation: isMobile ? 2 : 4,
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
+                          side: BorderSide(color: Colors.grey.shade200, width: 1),
+                        ),
                         child: InkWell(
                           onTap: () => _showEditDeleteMenu(i),
+                          borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(isMobile ? 8.0 : 12.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text(
+                                  p.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (p.category != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    p.category!,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: isMobile ? 10 : 12,
+                                    ),
+                                  ),
+                                ],
                                 const Spacer(),
-                                Text('${p.price.toStringAsFixed(2)} EGP', style: const TextStyle(color: Colors.grey)),
+                                Text(
+                                  '${p.price.toStringAsFixed(2)} EGP',
+                                  style: TextStyle(
+                                    color: Colors.blue.shade600,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isMobile ? 14 : 16,
+                                  ),
+                                ),
                               ],
                             ),
                           ),

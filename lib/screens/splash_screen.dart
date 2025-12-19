@@ -169,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ],
                   ),
                 ),
-                SizedBox(height: isMobile ? 30 : 40),
+                SizedBox(height: isMobile ? 20 : 30),
                 // Loading text
                 Text(
                   'Initializing...',
@@ -177,6 +177,17 @@ class _SplashScreenState extends State<SplashScreen>
                     fontSize: isMobile ? 12 : 14,
                     color: Colors.grey,
                     letterSpacing: 1,
+                  ),
+                ),
+                SizedBox(height: isMobile ? 20 : 30),
+                // Developer information
+                Text(
+                  'developed by MO2',
+                  style: TextStyle(
+                    fontSize: isMobile ? 12 : 13,
+                    color: Colors.grey.shade500,
+                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

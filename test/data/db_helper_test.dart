@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:pos_disck/data/db_helper.dart';
-import 'package:pos_disck/models/product.dart';
+import 'package:pos/data/db_helper.dart';
+import 'package:pos/models/product.dart';
 
 void main() {
   group('DbHelper Tests', () {
@@ -128,7 +128,7 @@ void main() {
         quantity: 100,
       );
 
-      final id = await dbHelper.insertProduct(product);
+      await dbHelper.insertProduct(product);
       
       // Update the product with a new ID
       final updatedProduct = Product(

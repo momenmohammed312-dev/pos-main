@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:pos_disck/models/customer.dart';
+import 'package:pos/models/customer.dart';
 
 void main() {
   group('Customer Model Tests', () {

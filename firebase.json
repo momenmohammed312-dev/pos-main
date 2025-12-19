@@ -1,0 +1,10 @@
+{
+  "firestore": {
+    "rules": [
+      {
+        "match": "/{document=**}",
+        "allow": "read, write"
+      }
+    ]
+  }
+}

@@ -13,7 +13,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _enableSounds = false;
   bool _useThermalPrinter = false;
   String? _currentUser;
 
@@ -26,7 +25,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadPrefs() async {
     final sp = await SharedPreferences.getInstance();
     setState(() {
-      _enableSounds = sp.getBool('enableSounds') ?? false;
       _useThermalPrinter = sp.getBool('useThermalPrinter') ?? false;
       _currentUser = sp.getString('currentUser');
     });
@@ -35,13 +33,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _setBool(String key, bool value) async {
     final sp = await SharedPreferences.getInstance();
     await sp.setBool(key, value);
-  }
-
-  Future<void> _clearProducts() async {
-    final confirm = await showConfirmDialog(context, title: 'Confirm', message: 'Delete all products from local DB?');
-    if (!confirm) return;
-    await DbHelper.instance.clearProducts();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All products deleted')));
   }
 
   Future<void> _logout() async {
@@ -68,7 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(isMobile ? 16 : 24),
+          padding: EdgeInsets.all(isMobile ? 20 : 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -105,53 +96,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Text('Preferences', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               SwitchListTile(
-                title: const Text('Enable sounds'),
-                value: _enableSounds,
-                onChanged: (v) {
-                  setState(() => _enableSounds = v);
-                  _setBool('enableSounds', v);
-                },
-              ),
-              SwitchListTile(
                 title: const Text('Use thermal printer'),
+                subtitle: const Text('Print receipts using thermal printer'),
                 value: _useThermalPrinter,
-                onChanged: (v) {
-                  setState(() => _useThermalPrinter = v);
-                  _setBool('useThermalPrinter', v);
+                onChanged: (value) {
+                  setState(() {
+                    _useThermalPrinter = value;
+                  });
+                  _setBool('useThermalPrinter', value);
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               
-              // Danger zone
-              const Text('Danger Zone', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
-              const SizedBox(height: 8),
+              // Logout button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _clearProducts,
-                  icon: const Icon(Icons.delete_forever),
-                  label: const Text('Clear all products'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              // App info
-              Center(
-                child: Column(
-                  children: [
-                    Text('App version: 1.0.0', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: isMobile ? double.infinity : 200,
-                      child: ElevatedButton.icon(
-                        onPressed: _logout,
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Logout'),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                      ),
-                    ),
-                  ],
+                  onPressed: _logout,
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Logout'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ),
             ],

@@ -104,7 +104,7 @@ class _SalesScreenState extends State<SalesScreen> {
         ),
         _buildCartSummary(),
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20.0),
           child: ElevatedButton(
             onPressed: _cart.isEmpty ? null : _checkout,
             style: ElevatedButton.styleFrom(
@@ -147,7 +147,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
   Widget _buildCartSummary() {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
         color: Colors.grey[100],
         border: Border(top: BorderSide(color: Colors.grey[300]!)),
